@@ -31,7 +31,10 @@ def main():
         LAST_UPDATE_ID = None
 
     while True:
-        echo(bot, slackbot)
+        try:
+            echo(bot, slackbot)
+        except TelegramError:
+            pass
 
 
 def echo(bot, slackbot):
