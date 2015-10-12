@@ -33,7 +33,7 @@ def main():
     while True:
         try:
             echo(bot, slackbot)
-        except TelegramError:
+        except telegram.TelegramError:
             pass
 
 
