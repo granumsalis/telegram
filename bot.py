@@ -66,7 +66,7 @@ def log_update(update, logfile, chatsfile, slackbot):
     if not chat_id in chats:
         chats.append(chat_id)
         with open(chatsfile, 'w') as chatsf:
-            json.dump(chats, chatsf)
+            json.dump(chats, chatsf, indent=4)
 
     slackbot.chat_post_message('#telegram-messages', slack_text, as_user=True)
 
@@ -84,7 +84,7 @@ def send_broad(bot, chatsfile, text):
             pass
 
     with open(chatsfile, 'w') as chatsf:
-        json.dump(new_chats, chatsf)
+        json.dump(new_chats, chatsf, indent=4)
 
 
 def run(bot, logfile, chatsfile, slackbot):
