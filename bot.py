@@ -9,6 +9,7 @@ import json
 import argparse
 import time
 import timepad
+import os
 
 LAST_UPDATE_ID = None
 MESSAGE = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
@@ -17,6 +18,7 @@ SEND_BROAD_CMD = '/send_broad '
 STOP_CMD = '/stop'
 SECRET_LIST_CMD = '/secret_list'
 TIMEPAD_LIST_FILENAME = '/tmp/today_list.txt'
+TELEGRAM_MSG_CHANNEL = '#telegram-messages'
 
 def main():
     global LAST_UPDATE_ID
@@ -74,12 +76,12 @@ def log_update(update, logfile, chatsfile, slackbot):
         with open(chatsfile, 'w') as chatsf:
             json.dump(chats, chatsf, indent=4)
 
-    if message.text == '/stop':
+    if message.text == STOP_CMD:
         chats.remove(chat_id)
         with open(chatsfile, 'w') as chatsf:
             json.dump(chats, chatsf, indent=4)
 
-    slackbot.chat_post_message('#telegram-messages', slack_text, as_user=True)
+    slackbot.chat_post_message(TELEGRAM_MSG_CHANNEL, slack_text, as_user=True)
 
 
 def send_broad(bot, chatsfile, text):
@@ -116,6 +118,7 @@ def run(bot, logfile, chatsfile, slackbot):
             timepad_token = open('.timepad_token').readline().strip()
             timepad.save_list_to_file(TIMEPAD_LIST_FILENAME, timepad_token)
             bot.sendDocument(chat_id=message.chat_id, document=open(TIMEPAD_LIST_FILENAME, 'rb'))
+            os.remove(TIMEPAD_LIST_FILENAME)
         elif message.text != '':
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE)
         else:
