@@ -8,11 +8,15 @@ from pyslack import SlackClient
 import json
 import argparse
 import time
+import timepad
 
 LAST_UPDATE_ID = None
 MESSAGE = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
 MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
-SEND_BROAD_CMD= '/send_broad '
+SEND_BROAD_CMD = '/send_broad '
+STOP_CMD = '/stop'
+SECRET_LIST_CMD = '/secret_list'
+TIMEPAD_LIST_FILENAME = '/tmp/today_list.txt'
 
 def main():
     global LAST_UPDATE_ID
@@ -106,8 +110,12 @@ def run(bot, logfile, chatsfile, slackbot):
             send_broad(bot, chatsfile, message.text[len(SEND_BROAD_CMD):])
         elif message.left_chat_participant:
             pass
-        elif message.text == '/stop':
+        elif message.text == STOP_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
+        elif message.text == SECRET_LIST_CMD:
+            timepad_token = open('.timepad_token').readline().strip()
+            timepad.save_list_to_file(TIMEPAD_LIST_FILENAME, timepad_token)
+            bot.sendDocument(chat_id=message.chat_id, document=open(TIMEPAD_LIST_FILENAME, 'rb'))
         elif message.text != '':
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE)
         else:
