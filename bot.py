@@ -7,6 +7,7 @@ import sys
 from pyslack import SlackClient
 import json
 import argparse
+import time
 
 LAST_UPDATE_ID = None
 MESSAGE = "Пока никаких новостей...\nСледите за анонсами на сайте granumsalis.ru или в группе vk.com/granumsalis."
@@ -38,8 +39,8 @@ def main():
         try:
             run(bot, args.logfile, args.chatsfile, slackbot)
         except telegram.TelegramError as error:
-            if error != 'TempError':
-                print "TelegramError", error
+            print "TelegramError", error
+            time.sleep(1)
 
 
 def log_update(update, logfile, chatsfile, slackbot):
