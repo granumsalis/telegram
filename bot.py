@@ -11,6 +11,7 @@ import time
 
 LAST_UPDATE_ID = None
 MESSAGE = "Пока никаких новостей...\nСледите за анонсами на сайте granumsalis.ru или в группе vk.com/granumsalis."
+MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
 SEND_BROAD_CMD= '/send_broad '
 
 def main():
@@ -69,6 +70,11 @@ def log_update(update, logfile, chatsfile, slackbot):
         with open(chatsfile, 'w') as chatsf:
             json.dump(chats, chatsf, indent=4)
 
+    if message.text == '/stop':
+        chats.remove(chat_id)
+        with open(chatsfile, 'w') as chatsf:
+            json.dump(chats, chatsf, indent=4)
+
     slackbot.chat_post_message('#telegram-messages', slack_text, as_user=True)
 
 
@@ -96,10 +102,12 @@ def run(bot, logfile, chatsfile, slackbot):
 
         log_update(update, logfile, chatsfile, slackbot)
 
-        if (message.text.startswith(SEND_BROAD_CMD)):
+        if message.text.startswith(SEND_BROAD_CMD):
             send_broad(bot, chatsfile, message.text[len(SEND_BROAD_CMD):])
         elif message.left_chat_participant:
             pass
+        elif message.text == '/stop':
+            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
         elif message.text != '':
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE)
         else:
