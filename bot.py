@@ -10,7 +10,7 @@ import argparse
 import time
 
 LAST_UPDATE_ID = None
-MESSAGE = "Пока никаких новостей...\nСледите за анонсами на сайте granumsalis.ru или в группе vk.com/granumsalis."
+MESSAGE = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
 MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
 SEND_BROAD_CMD= '/send_broad '
 
