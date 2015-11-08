@@ -1,0 +1,38 @@
+doctype html
+html(lang="ru")
+  head
+    | <meta charset="utf-8">
+    title= title
+    style.
+      #header {
+        padding: 5px;
+      }
+      body {
+        font-family: Arial;
+      }
+      .column {
+        width: 45%;
+        padding: 5px;
+        font-size: 10pt;
+        line-height: 0.2;
+      }
+      .left {
+        float: left;
+      }
+      .right {
+        float: right;
+      }
+  body
+    h3= title + " (начало: " + starts_at + ")"
+    p= "(cписок на момент: " + current_time + ")"
+    - var i = 0
+    .left.column
+      while i < names_list.length
+        p= names_list[i]
+        - i += 2
+    .right.column
+      - i = 1
+      while i < names_list.length
+        p= names_list[i]
+        - i += 2
+

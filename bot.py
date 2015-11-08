@@ -17,7 +17,6 @@ MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, з�
 SEND_BROAD_CMD = '/send_broad '
 STOP_CMD = '/stop'
 SECRET_LIST_CMD = '/secret_list'
-TIMEPAD_LIST_FILENAME = '/tmp/today_list.txt'
 TELEGRAM_MSG_CHANNEL = '#telegram-messages'
 
 def main():
@@ -116,9 +115,9 @@ def run(bot, logfile, chatsfile, slackbot):
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
         elif message.text == SECRET_LIST_CMD:
             timepad_token = open('.timepad_token').readline().strip()
-            timepad.save_list_to_file(TIMEPAD_LIST_FILENAME, timepad_token)
-            bot.sendDocument(chat_id=message.chat_id, document=open(TIMEPAD_LIST_FILENAME, 'rb'))
-            os.remove(TIMEPAD_LIST_FILENAME)
+            timepad_list_filename = timepad.save_list_to_file(timepad_token)
+            bot.sendDocument(chat_id=message.chat_id, document=open(timepad_list_filename, 'rb'))
+            os.remove(timepad_list_filename)
         elif message.text != '':
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE)
         else:
