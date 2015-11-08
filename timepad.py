@@ -41,13 +41,14 @@ def get_timepad_info(token, org_id=TIMEPAD_GRANUMSALIS_ORG_ID, date=None):
         if orders.has_key('values'):
             list_chunk = map(lambda order: u'{0} {1} ({2})'.format(order['tickets'][0]['answers']['surname'], 
                                                           order['tickets'][0]['answers']['name'],
-                                                          len(order['tickets'])),
+                                                          len(order['tickets'])).title(),
                     orders['values'])
             names_list.extend(list_chunk)
             skip += limit
         else:
             break
 
+    names_list.sort()
     current_time = datetime.datetime.now().strftime('%c')
     title = u'Щепотка Соли "{0}"'.format(title)
     return { 'title' : title,
