@@ -10,10 +10,13 @@ import argparse
 import time
 import timepad
 import os
+import traceback
 
 LAST_UPDATE_ID = None
 MESSAGE = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
 MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
+MESSAGE_ALARM = "Аларм! Аларм!"
+CHAT_ID_ALARM = 79031498
 SEND_BROAD_CMD = '/send_broad '
 STOP_CMD = '/stop'
 SECRET_LIST_CMD = '/secret_list'
@@ -47,6 +50,10 @@ def main():
         except telegram.TelegramError as error:
             print "TelegramError", error
             time.sleep(1)
+        except Exception:
+            traceback.print_exc()
+            bot.sendMessage(chat_id=CHAT_ID_ALARM, text=MESSAGE_ALARM)
+            time.sleep(100)
 
 
 def log_update(update, logfile, chatsfile, slackbot):
