@@ -39,12 +39,16 @@ def get_timepad_info(token, org_id=TIMEPAD_GRANUMSALIS_ORG_ID, date=None):
         params['skip'] = skip
         orders = requests.get('{0}/{1}/orders'.format(timepad_api_url, event_id), params=params)
         if orders.ok:
-            list_chunk = map(lambda order: u'{0} {1} ({2})'.format(order['tickets'][0]['answers']['surname'], 
+            orders = orders.json()
+            if orders.has_key('values'):
+                list_chunk = map(lambda order: u'{0} {1} ({2})'.format(order['tickets'][0]['answers']['surname'],
                                                           order['tickets'][0]['answers']['name'],
                                                           len(order['tickets'])).title(),
-                    orders.json()['values'])
-            names_list.extend(list_chunk)
-            skip += limit
+                                 orders['values'])
+                names_list.extend(list_chunk)
+                skip += limit
+            else:
+                break
         else:
             break
 
