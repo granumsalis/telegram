@@ -1,4 +1,4 @@
-    #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import logging
@@ -19,9 +19,10 @@ LAST_UPDATE_ID = None
 MESSAGE = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
 MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
 MESSAGE_HELP = "/hello - Greetings\n/help - show this message\n/stop - exclude self from notification list"
+MESSAGE_HELP_ADMIN = "/hello - Greetings\n/help - show this message\n/user_list - list of subscribers\n/send_broad <message> - send message to all users\n/send <username> <message> - send <message> to <username>\n/stop - exclude self from notification list"
 MESSAGE_ALARM = "Аларм! Аларм!"
 CHAT_ID_ALARM = 79031498
-SEND_BROAD_CMD = '/send_broad '
+SEND_BROAD_CMD = '/send_broad'
 SEND_MSG_CMD = '/send'
 STOP_CMD = '/stop'
 SECRET_LIST_CMD = '/secret_list'
@@ -30,7 +31,7 @@ HELLO_CMD = '/hello'
 HELP_CMD = '/help'
 TELEGRAM_MSG_CHANNEL = '#telegram-messages'
 
-db = Database('sqlite', 'granum_salis.sqlite', create_db=True)
+db = Database('sqlite', 'granumsalis.sqlite', create_db=True)
 class Chat(db.Entity):
     chat_id = Required(int, unique=True)
     user_id = Required(int)
@@ -40,6 +41,7 @@ class Chat(db.Entity):
     first_name = Optional(str)
     last_name = Optional(str)
 db.generate_mapping(create_tables=True)
+
 
 def main():
     global LAST_UPDATE_ID
@@ -96,18 +98,19 @@ def log_update(update, logfile, slackbot):
         log.write(log_text)
     
     with db_session:
-        chat = Chat.get(chat_id = chat_id)
+        chat = Chat.get(chat_id=chat_id)
         if message.text == STOP_CMD or message.left_chat_participant != None:
+            # TODO: make silent mode, not delete
             chat.delete()
         else:
             if chat == None:
-                chat = Chat(chat_id = chat_id, user_id = message.from_user.id, open_date = datetime.now(), \
-                 last_message_date = datetime.now(), username = message.from_user.username, \
-                 first_name = message.from_user.first_name, last_name = message.from_user.last_name)
+                chat = Chat(chat_id=chat_id, user_id=message.from_user.id, open_date=datetime.now(), \
+                                last_message_date=datetime.now(), username=message.from_user.username, \
+                                first_name=message.from_user.first_name, last_name=message.from_user.last_name)
             else:
                 chat.last_message_date = datetime.now()
                 chat.username = message.from_user.username
-        commit()
+
     slackbot.chat_post_message(TELEGRAM_MSG_CHANNEL, slack_text, as_user=True)
 
 
@@ -119,41 +122,45 @@ def send_broad(bot, text):
             except telegram.TelegramError:
                 pass
 
+
 def print_userlist(bot, message):
     with db_session:
         chats_str = ''
         for chat in select(chat for chat in Chat):
-            try:
-                chats_str += 'user: {0} user_id: {1}\n'.format(chat.username, chat.user_id)
-            except telegram.TelegramError:
-                pass
-        bot.sendMessage(chat_id=message.chat_id, text = chats_str)
+            chats_str += 'user: {0} chat_id: {1}\n'.format(chat.username, chat.chat_id)
+
+        try:
+            bot.sendMessage(chat_id=message.chat_id, text=chats_str)
+        except telegram.TelegramError:
+            pass
+
 
 def send_message(bot, message):
     with db_session:
         cmd = text = ''
         user_id = 0
-        params = message.text.split(' ',2)
+        params = message.text.split(' ', 2)
         if len(params) > 0:
             cmd = params[0]
         if len(params) > 1:
             try:
                 user_id = int(params[1])
             except ValueError:
-                bot.sendMessage(chat_id=message.chat_id, text = 'cannot find user')
+                bot.sendMessage(chat_id=message.chat_id, text='cannot find user')
                 return False
         if len(params) > 2:
             text = params[2]
         if user_id == 0:
-            bot.sendMessage(chat_id=message.chat_id, text = 'cannot send message to empty user')
+            bot.sendMessage(chat_id=message.chat_id, text='cannot send message to empty user')
         elif len(text) == 0:
-            bot.sendMessage(chat_id=message.chat_id, text = 'cannot send empty message')
+            bot.sendMessage(chat_id=message.chat_id, text='cannot send empty message')
         else:
-            chat = Chat.get(user_id = user_id)
+            chat = Chat.get(user_id=user_id)
             if chat == None:
-                bot.sendMessage(chat_id=message.chat_id, text = 'cannot find user')
+                bot.sendMessage(chat_id=message.chat_id, text='cannot find user')
             else:
-                bot.sendMessage(chat_id=chat.chat_id, text = text)
+                bot.sendMessage(chat_id=chat.chat_id, text=text)
+
 
 def run(bot, admin_list, logfile, slackbot):
     global LAST_UPDATE_ID
@@ -166,17 +173,20 @@ def run(bot, admin_list, logfile, slackbot):
         if message.left_chat_participant:
             pass
         elif message.text == HELP_CMD:
-            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_HELP)
+            if is_admin:
+                bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_HELP_ADMIN)
+            else:
+                bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_HELP)
         elif message.text == HELLO_CMD:
             if message.from_user != None:
                 username = message.from_user.first_name + ' ' + message.from_user.last_name
             else:
-                username = 'anonymouse'
-            bot.sendMessage(chat_id=message.chat_id, text="Hello " + username)
+                username = 'Anonymous'
+            bot.sendMessage(chat_id=message.chat_id, text="Hello, {}!".format(username))
         elif message.text == STOP_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
         elif is_admin and message.text.startswith(SEND_BROAD_CMD):
-            send_broad(bot, message.text[len(SEND_BROAD_CMD):])
+            send_broad(bot, message.text[len(SEND_BROAD_CMD) + 1:])
         elif is_admin and message.text.startswith(SEND_MSG_CMD):
             send_message(bot, message)
         elif is_admin and message.text == SECRET_LIST_CMD:
@@ -186,12 +196,11 @@ def run(bot, admin_list, logfile, slackbot):
             os.remove(timepad_list_filename)
         elif is_admin and message.text == USER_LIST_CMD:
             print_userlist(bot,message)
-        elif is_admin and message.text != '':
-            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE)
         else:
             pass
             
         LAST_UPDATE_ID = update.update_id + 1
+
 
 if __name__ == '__main__':
     main()
