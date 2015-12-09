@@ -175,9 +175,9 @@ def run(bot, admin_list, logfile, slackbot):
             bot.sendMessage(chat_id=message.chat_id, text="Hello " + username)
         elif message.text == STOP_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
-        elif message.text.startswith(SEND_BROAD_CMD):
+        elif is_admin and message.text.startswith(SEND_BROAD_CMD):
             send_broad(bot, message.text[len(SEND_BROAD_CMD):])
-        elif message.text.startswith(SEND_MSG_CMD):
+        elif is_admin and message.text.startswith(SEND_MSG_CMD):
             send_message(bot, message)
         elif is_admin and message.text == SECRET_LIST_CMD:
             timepad_token = open('.timepad_token').readline().strip()
