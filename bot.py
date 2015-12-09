@@ -162,11 +162,8 @@ def run(bot, admin_list, logfile, slackbot):
         # print message
         log_update(update, logfile, slackbot)
         is_admin = str(message.from_user.id) in admin_list
-        if message.text.startswith(SEND_BROAD_CMD):
-            send_broad(bot, message.text[len(SEND_BROAD_CMD):])
-        elif message.text.startswith(SEND_MSG_CMD):
-            send_message(bot, message)
-        elif message.left_chat_participant:
+    
+        if message.left_chat_participant:
             pass
         elif message.text == HELP_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_HELP)
@@ -178,6 +175,10 @@ def run(bot, admin_list, logfile, slackbot):
             bot.sendMessage(chat_id=message.chat_id, text="Hello " + username)
         elif message.text == STOP_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
+        elif message.text.startswith(SEND_BROAD_CMD):
+            send_broad(bot, message.text[len(SEND_BROAD_CMD):])
+        elif message.text.startswith(SEND_MSG_CMD):
+            send_message(bot, message)
         elif is_admin and message.text == SECRET_LIST_CMD:
             timepad_token = open('.timepad_token').readline().strip()
             timepad_list_filename = timepad.save_list_to_file(timepad_token)
