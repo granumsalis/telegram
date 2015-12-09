@@ -41,11 +41,8 @@ def get_timepad_info(token, org_id=TIMEPAD_GRANUMSALIS_ORG_ID, date=None):
         if orders.ok:
             orders = orders.json()
             if orders.has_key('values'):
-                #list_chunk = map(lambda order: u'{0} {1} ({2})'.format(order['tickets'][0]['answers']['surname'],
-                #                                          order['tickets'][0]['answers']['name'],
-                #                                          len(order['tickets'])).title(),
-                list_chunk = map(lambda order: u'{0} {1} ({2})'.format(order['answers']['surname'],
-                                                          order['answers']['name'],
+                list_chunk = map(lambda order: u'{0} {1} ({2})'.format(order['tickets'][0]['answers']['surname'],
+                                                          order['tickets'][0]['answers']['name'],
                                                           len(order['tickets'])).title(),
                                  orders['values'])
                 names_list.extend(list_chunk)
