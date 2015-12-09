@@ -16,7 +16,7 @@ from datetime import datetime
 from pony.orm import *
 
 LAST_UPDATE_ID = None
-MESSAGE = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
+MESSAGE_START = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
 MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
 MESSAGE_HELP = "/hello - Greetings\n/help - show this message\n/stop - exclude self from notification list"
 MESSAGE_HELP_ADMIN = "/hello - Greetings\n/help - show this message\n/user_list - list of subscribers\n/send_broad <message> - send message to all users\n/send <username> <message> - send <message> to <username>\n/stop - exclude self from notification list"
@@ -24,6 +24,7 @@ MESSAGE_ALARM = "Аларм! Аларм!"
 CHAT_ID_ALARM = 79031498
 SEND_BROAD_CMD = '/send_broad'
 SEND_MSG_CMD = '/send'
+START_CMD = '/start'
 STOP_CMD = '/stop'
 SECRET_LIST_CMD = '/secret_list'
 USER_LIST_CMD = '/user_list'
@@ -40,6 +41,7 @@ class Chat(db.Entity):
     username = Optional(str)
     first_name = Optional(str)
     last_name = Optional(str)
+    silent_mode = Required(bool)
 db.generate_mapping(create_tables=True)
 
 
@@ -100,13 +102,15 @@ def log_update(update, logfile, slackbot):
     with db_session:
         chat = Chat.get(chat_id=chat_id)
         if message.text == STOP_CMD or message.left_chat_participant != None:
-            # TODO: make silent mode, not delete
-            chat.delete()
+            chat.silent_mode = True
+        elif message.text == START_CMD:
+            chat.silent_mode = False
         else:
             if chat == None:
                 chat = Chat(chat_id=chat_id, user_id=message.from_user.id, open_date=datetime.now(), \
                                 last_message_date=datetime.now(), username=message.from_user.username, \
-                                first_name=message.from_user.first_name, last_name=message.from_user.last_name)
+                                first_name=message.from_user.first_name, last_name=message.from_user.last_name, \
+                                silent_mode=False)
             else:
                 chat.last_message_date = datetime.now()
                 chat.username = message.from_user.username
@@ -116,7 +120,7 @@ def log_update(update, logfile, slackbot):
 
 def send_broad(bot, text):
     with db_session:
-        for chat_id in select(chat.chat_id for chat in Chat):
+        for chat_id in select(chat.chat_id for chat in Chat if chat.silent_mode == False):
             try:
                 bot.sendMessage(chat_id=chat_id, text=text)
             except telegram.TelegramError:
@@ -183,6 +187,8 @@ def run(bot, admin_list, logfile, slackbot):
             else:
                 username = 'Anonymous'
             bot.sendMessage(chat_id=message.chat_id, text="Hello, {}!".format(username))
+        elif message.text == START_CMD:
+            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_START)
         elif message.text == STOP_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
         elif is_admin and message.text.startswith(SEND_BROAD_CMD):
