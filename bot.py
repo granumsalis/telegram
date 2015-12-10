@@ -25,6 +25,7 @@ KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/stop", "/help"], ["/user_list", "/
 MESSAGE_HELP_ADMIN = "/hello - Greetings\n/help - show this message\n/user_list - list of subscribers\n/secret_list - get participants list for next event\n/send_broad <message> - send message to all users\n/send <user_id> <message> - send <message> to <user_id>\n/stop - exclude self from notification list"
 MESSAGE_ALARM = "Аларм! Аларм!"
 CHAT_ID_ALARM = 79031498
+BOT_ID = 136777319
 SEND_BROAD_CMD = '/send_broad'
 SEND_MSG_CMD = '/send'
 START_CMD = '/start'
@@ -102,21 +103,28 @@ def update_chat_db(message):
             chat = Chat(chat_id=message.chat.id, user_id=message.from_user.id, open_date=datetime.now(), \
                             last_message_date=datetime.now(), username=message.from_user.username, \
                             first_name=message.from_user.first_name, last_name=message.from_user.last_name, \
-                            silent_mode=False)
+                            silent_mode=False, deleted=False)
         else:
             chat.last_message_date = datetime.now()
             chat.username = message.from_user.username
 
-        if message.text == STOP_CMD or message.left_chat_participant != None:
+        if message.text == STOP_CMD:
             chat.silent_mode = True
+        elif message.left_chat_participant != None:
+            if message.left_chat_participant.id == BOT_ID:
+                chat.deleted = True
+        elif message.new_chat_participant != None:
+            if message.new_chat_participant.id == BOT_ID:
+                chat.deleted = False
         elif message.text == START_CMD:
             chat.silent_mode = False
+            chat.deleted = False
 
 
 
 def send_broad(bot, text):
     with db_session:
-        for chat_id in select(chat.chat_id for chat in Chat if chat.silent_mode == False):
+        for chat_id in select(chat.chat_id for chat in Chat if not (chat.silent_mode or chat.deleted)):
             try:
                 bot.sendMessage(chat_id=chat_id, text=text)
             except telegram.TelegramError:
@@ -131,6 +139,8 @@ def print_userlist(bot, message):
                                                      chat.username)
             if chat.silent_mode:
                 chats_str += ' (silent mode)'
+            if chat.deleted:
+                chats_str += ' (deleted)'
             chats_str += '\n'
 
         try:
@@ -162,6 +172,8 @@ def send_message(bot, message):
             chat = Chat.get(primary_id=primary_id)
             if chat == None:
                 bot.sendMessage(chat_id=message.chat_id, text='cannot find user')
+            elif chat.deleted:
+                bot.sendMessage(chat_id=message.chat_id, text='this user marked as deleted')
             else:
                 bot.sendMessage(chat_id=chat.chat_id, text=text)
 

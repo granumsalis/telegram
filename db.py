@@ -15,3 +15,4 @@ class Chat(granumDB.Entity):
     first_name = Optional(str)
     last_name = Optional(str)
     silent_mode = Required(bool)
+    deleted = Required(bool)
