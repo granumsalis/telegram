@@ -127,7 +127,8 @@ def print_userlist(bot, message):
     with db_session:
         chats_str = ''
         for chat in select(chat for chat in Chat):
-            chats_str += '{0}. user: {1}'.format(chat.primary_id, chat.username)
+            chats_str += u'{}. {} {} (@{})'.format(chat.primary_id, chat.first_name, chat.last_name, \
+                                                     chat.username)
             if chat.silent_mode:
                 chats_str += ' (silent mode)'
             chats_str += '\n'
