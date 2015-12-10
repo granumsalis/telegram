@@ -12,7 +12,9 @@ import timepad
 import os
 import traceback
 from datetime import datetime
-from pony.orm import *
+from pony.orm import db_session, select
+from db import granumDB, Chat
+
 
 LAST_UPDATE_ID = None
 MESSAGE_START = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
@@ -33,26 +35,17 @@ HELLO_CMD = '/hello'
 HELP_CMD = '/help'
 TELEGRAM_MSG_CHANNEL = '#telegram-messages'
 
-db = Database('sqlite', 'granumsalis.sqlite', create_db=True)
-class Chat(db.Entity):
-    primary_id = PrimaryKey(int, auto=True)
-    chat_id = Required(int, unique=True)
-    user_id = Required(int)
-    open_date = Required(datetime)
-    last_message_date = Optional(datetime)
-    username = Optional(str)
-    first_name = Optional(str)
-    last_name = Optional(str)
-    silent_mode = Required(bool)
-db.generate_mapping(create_tables=True)
-
 
 def main():
     global LAST_UPDATE_ID
 
     parser = argparse.ArgumentParser(description="Telegram bot for GranumSalis")
     parser.add_argument("--logfile", type=str, default='log', help="Path to log file")
+    parser.add_argument("--dbfile", type=str, default='granumsalis.sqlite', help="Path to sqlite DB file")
     args = parser.parse_args()
+
+    granumDB.bind('sqlite', args.dbfile, create_db=True)
+    granumDB.generate_mapping(create_tables=True)
 
     with open('.admin_ids') as f:
         admin_ids = f.read().splitlines() 
