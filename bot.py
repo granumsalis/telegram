@@ -34,6 +34,7 @@ SECRET_LIST_CMD = '/secret_list'
 USER_LIST_CMD = '/user_list'
 HELLO_CMD = '/hello'
 HELP_CMD = '/help'
+NEXT_CMD = '/next'
 TELEGRAM_MSG_CHANNEL = '#telegram-messages'
 
 
@@ -204,6 +205,10 @@ def run(bot, admin_list, logfile, slackbot):
                                 reply_markup=(KEYBOARD_ADMIN if is_admin else KEYBOARD))
         elif message.text == STOP_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
+        elif message.text == NEXT_CMD:
+            timepad_token = open('.timepad_token').readline().strip()
+            next_event_message=timepad.get_next_event(timepad_token)
+            bot.sendMessage(chat_id=message.chat_id, text=next_event_message)
         elif is_admin and message.text.startswith(SEND_BROAD_CMD):
             send_broad(bot, message.text[len(SEND_BROAD_CMD) + 1:])
         elif is_admin and message.text.startswith(SEND_MSG_CMD):
