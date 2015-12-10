@@ -19,6 +19,7 @@ LAST_UPDATE_ID = None
 MESSAGE_START = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
 MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
 MESSAGE_HELP = "/hello - Greetings\n/help - show this message\n/stop - exclude self from notification list"
+KEYBOARD = '{"keyboard" : [["/start", "/stop", "/help"]], "resize_keyboard" : true}'
 MESSAGE_HELP_ADMIN = "/hello - Greetings\n/help - show this message\n/user_list - list of subscribers\n/send_broad <message> - send message to all users\n/send <username> <message> - send <message> to <username>\n/stop - exclude self from notification list"
 MESSAGE_ALARM = "Аларм! Аларм!"
 CHAT_ID_ALARM = 79031498
@@ -188,7 +189,7 @@ def run(bot, admin_list, logfile, slackbot):
                 username = 'Anonymous'
             bot.sendMessage(chat_id=message.chat_id, text="Hello, {}!".format(username))
         elif message.text == START_CMD:
-            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_START)
+            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_START, reply_markup=KEYBOARD)
         elif message.text == STOP_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
         elif is_admin and message.text.startswith(SEND_BROAD_CMD):
