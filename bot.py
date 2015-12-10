@@ -11,7 +11,6 @@ import time
 import timepad
 import os
 import traceback
-import sqlite3
 from datetime import datetime
 from pony.orm import *
 
@@ -20,7 +19,8 @@ MESSAGE_START = "Пока никаких новостей...\nЯ буду при
 MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
 MESSAGE_HELP = "/hello - Greetings\n/help - show this message\n/stop - exclude self from notification list"
 KEYBOARD = '{"keyboard" : [["/start", "/stop", "/help"]], "resize_keyboard" : true}'
-MESSAGE_HELP_ADMIN = "/hello - Greetings\n/help - show this message\n/user_list - list of subscribers\n/send_broad <message> - send message to all users\n/send <username> <message> - send <message> to <username>\n/stop - exclude self from notification list"
+KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/stop", "/help"], ["/user_list", "/secret_list"]], "resize_keyboard" : true}'
+MESSAGE_HELP_ADMIN = "/hello - Greetings\n/help - show this message\n/user_list - list of subscribers\n/secret_list - get participants list for next event\n/send_broad <message> - send message to all users\n/send <user_id> <message> - send <message> to <user_id>\n/stop - exclude self from notification list"
 MESSAGE_ALARM = "Аларм! Аларм!"
 CHAT_ID_ALARM = 79031498
 SEND_BROAD_CMD = '/send_broad'
@@ -35,6 +35,7 @@ TELEGRAM_MSG_CHANNEL = '#telegram-messages'
 
 db = Database('sqlite', 'granumsalis.sqlite', create_db=True)
 class Chat(db.Entity):
+    primary_id = PrimaryKey(int, auto=True)
     chat_id = Required(int, unique=True)
     user_id = Required(int)
     open_date = Required(datetime)
@@ -95,28 +96,28 @@ def log_update(update, logfile, slackbot):
     else:
         slack_text = slack_text.format(message.text)
     log_text = update.to_json().decode('unicode-escape').encode('utf-8') + '\n'
-    chat_id = message.chat_id
 
+    slackbot.chat_post_message(TELEGRAM_MSG_CHANNEL, slack_text, as_user=True)
     with open(logfile, 'a') as log:
         log.write(log_text)
-    
+
+    chat_id = message.chat_id
     with db_session:
         chat = Chat.get(chat_id=chat_id)
+        if chat == None:
+            chat = Chat(chat_id=chat_id, user_id=message.from_user.id, open_date=datetime.now(), \
+                            last_message_date=datetime.now(), username=message.from_user.username, \
+                            first_name=message.from_user.first_name, last_name=message.from_user.last_name, \
+                            silent_mode=False)
+        else:
+            chat.last_message_date = datetime.now()
+            chat.username = message.from_user.username
+
         if message.text == STOP_CMD or message.left_chat_participant != None:
             chat.silent_mode = True
         elif message.text == START_CMD:
             chat.silent_mode = False
-        else:
-            if chat == None:
-                chat = Chat(chat_id=chat_id, user_id=message.from_user.id, open_date=datetime.now(), \
-                                last_message_date=datetime.now(), username=message.from_user.username, \
-                                first_name=message.from_user.first_name, last_name=message.from_user.last_name, \
-                                silent_mode=False)
-            else:
-                chat.last_message_date = datetime.now()
-                chat.username = message.from_user.username
 
-    slackbot.chat_post_message(TELEGRAM_MSG_CHANNEL, slack_text, as_user=True)
 
 
 def send_broad(bot, text):
@@ -132,7 +133,10 @@ def print_userlist(bot, message):
     with db_session:
         chats_str = ''
         for chat in select(chat for chat in Chat):
-            chats_str += 'user: {0} chat_id: {1}\n'.format(chat.username, chat.chat_id)
+            chats_str += '{0}. user: {1}'.format(chat.primary_id, chat.username)
+            if chat.silent_mode:
+                chats_str += ' (silent mode)'
+            chats_str += '\n'
 
         try:
             bot.sendMessage(chat_id=message.chat_id, text=chats_str)
@@ -143,24 +147,24 @@ def print_userlist(bot, message):
 def send_message(bot, message):
     with db_session:
         cmd = text = ''
-        user_id = 0
+        primary_id = 0
         params = message.text.split(' ', 2)
         if len(params) > 0:
             cmd = params[0]
         if len(params) > 1:
             try:
-                user_id = int(params[1])
+                primary_id = int(params[1])
             except ValueError:
                 bot.sendMessage(chat_id=message.chat_id, text='cannot find user')
                 return False
         if len(params) > 2:
             text = params[2]
-        if user_id == 0:
+        if primary_id == 0:
             bot.sendMessage(chat_id=message.chat_id, text='cannot send message to empty user')
         elif len(text) == 0:
             bot.sendMessage(chat_id=message.chat_id, text='cannot send empty message')
         else:
-            chat = Chat.get(user_id=user_id)
+            chat = Chat.get(primary_id=primary_id)
             if chat == None:
                 bot.sendMessage(chat_id=message.chat_id, text='cannot find user')
             else:
@@ -171,7 +175,6 @@ def run(bot, admin_list, logfile, slackbot):
     global LAST_UPDATE_ID
     for update in bot.getUpdates(offset=LAST_UPDATE_ID, timeout=10):
         message = update.message
-        # print message
         log_update(update, logfile, slackbot)
         is_admin = str(message.from_user.id) in admin_list
     
@@ -189,7 +192,8 @@ def run(bot, admin_list, logfile, slackbot):
                 username = 'Anonymous'
             bot.sendMessage(chat_id=message.chat_id, text="Hello, {}!".format(username))
         elif message.text == START_CMD:
-            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_START, reply_markup=KEYBOARD)
+            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_START, \
+                                reply_markup=(KEYBOARD_ADMIN if is_admin else KEYBOARD))
         elif message.text == STOP_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
         elif is_admin and message.text.startswith(SEND_BROAD_CMD):
