@@ -94,11 +94,12 @@ def log_update(update, logfile, slackbot):
     with open(logfile, 'a') as log:
         log.write(log_text)
 
-    chat_id = message.chat_id
+
+def update_chat_db(message):
     with db_session:
-        chat = Chat.get(chat_id=chat_id)
+        chat = Chat.get(chat_id=message.chat.id)
         if chat == None:
-            chat = Chat(chat_id=chat_id, user_id=message.from_user.id, open_date=datetime.now(), \
+            chat = Chat(chat_id=message.chat.id, user_id=message.from_user.id, open_date=datetime.now(), \
                             last_message_date=datetime.now(), username=message.from_user.username, \
                             first_name=message.from_user.first_name, last_name=message.from_user.last_name, \
                             silent_mode=False)
@@ -169,6 +170,7 @@ def run(bot, admin_list, logfile, slackbot):
     for update in bot.getUpdates(offset=LAST_UPDATE_ID, timeout=10):
         message = update.message
         log_update(update, logfile, slackbot)
+        update_chat_db(message)
         is_admin = str(message.from_user.id) in admin_list
     
         if message.left_chat_participant:
