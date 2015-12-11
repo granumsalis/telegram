@@ -9,14 +9,11 @@ import pdfkit
 import sys
 import parse
 
-reload(sys)
-sys.setdefaultencoding('UTF8')
-
-
 
 TIMEPAD_GRANUMSALIS_ORG_ID = 50011
 TIMEPAD_LIST_FILENAME = '/tmp/granumsalis-list{0}{1}.{2}'
 NEXT_TEMPLATE_FILENAME = 'next_template'
+NO_EVENTS_MESSAGE = 'Пока что никаких мероприятий нет'
 
 def get_next_event(token, org_id=TIMEPAD_GRANUMSALIS_ORG_ID, date=None):
     timepad_api_url = 'https://api.timepad.ru/v1/events'
@@ -31,46 +28,52 @@ def get_next_event(token, org_id=TIMEPAD_GRANUMSALIS_ORG_ID, date=None):
         'starts_at_min' : date,
         'token' : token
     }
-    events = requests.get(timepad_api_url, params=params).json()
-    next_event_id = events['values'][0]['id']
 
-    timepad_api_event_url = 'https://api.timepad.ru/v1/events/'+str(next_event_id)
+    events = requests.get(timepad_api_url, params=params).json()
+
+    try:
+        next_event_id = events['values'][0]['id']
+    except:
+        return NO_EVENTS_MESSAGE
+
+    timepad_api_event_url = 'https://api.timepad.ru/v1/events/{}'.format(str(next_event_id))
     next_event = requests.get(timepad_api_event_url).json()
 
+    date_parser = parse.compile('{year}-{month}-{day}T{hours}:{minutes}:{seconds}+{UTM}')
+    starts_at = date_parser.parse(str(next_event['starts_at']))
 
-    d=parse.compile('{year}-{month}-{day}T{hours}:{minutes}:{seconds}+{UTM}')
-    starts_at=d.parse(str(next_event['starts_at']))
-
-    months={
-        '1':'января',
-        '2':'февраля',
-        '3':'марта',
-        '4':'апреля',
-        '5':'мая',
-        '6':'июня',
-        '7':'июля',
-        '8':'августа',
-        '9':'сентября',
-        '10':'октября',
-        '11':'ноября',
-        '12':'декабря'
+    months = {
+        '1' : 'января',
+        '2' : 'февраля',
+        '3' : 'марта',
+        '4' : 'апреля',
+        '5' : 'мая',
+        '6' : 'июня',
+        '7' : 'июля',
+        '8' : 'августа',
+        '9' : 'сентября',
+        '10' : 'октября',
+        '11' : 'ноября',
+        '12' : 'декабря'
         }
 
-    next_params={
-        'title': next_event['name'],
-        'lead': next_event['description_short'],
-        'url': next_event['url'],
-        'day': starts_at['day'],
-        'month': months[starts_at['month']],
-        'time': starts_at['hours']+':'+starts_at['minutes'],
-        'address': next_event['location']['address']
+    next_params = {
+        'title' : next_event['name'],
+        'lead' : next_event['description_short'],
+        'url' : next_event['url'],
+        'day' : starts_at['day'],
+        'month' : months[starts_at['month']],
+        'time' : starts_at['hours']+':'+starts_at['minutes'],
+        'address' : next_event['location']['address']
         }
 
     with codecs.open(NEXT_TEMPLATE_FILENAME,'r',encoding='utf-8') as f:
         next_template = f.readlines()
-        next_template = repr([x.encode(sys.stdout.encoding) for x in next_template]).decode('string-escape')
-        next=next_template.format(**next_params)
+    next = []
+    for line in next_template:
+        next.append(line.format(**next_params))
 
+    next='\n'.join(next)
 
     return next
 
@@ -166,13 +169,10 @@ def save_list_to_file(token, filename=None, file_format='pdf', org_id=TIMEPAD_GR
 
 def main():
     token = open('.timepad_token').readline().strip()
-    #filename = save_list_to_file(token)
-    #print('List saved to {0}'.format(filename))
-    print get_next_event(token)
-
+    filename = save_list_to_file(token)
+    print('List saved to {0}'.format(filename))
+    print(get_next_event(token))
 
 
 if __name__ == '__main__':
     main()
-
-

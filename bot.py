@@ -19,7 +19,7 @@ from db import granumDB, Chat
 LAST_UPDATE_ID = None
 MESSAGE_START = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
 MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
-MESSAGE_HELP = "/hello - Greetings\n/help - show this message\n/stop - exclude self from notification list"
+MESSAGE_HELP = "/hello - Greetings\n/help - show this message\n/next - next event\n/stop - exclude self from notification list"
 KEYBOARD = '{"keyboard" : [["/start", "/stop", "/help"]], "resize_keyboard" : true}'
 KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/stop", "/help"], ["/user_list", "/secret_list"]], "resize_keyboard" : true}'
 MESSAGE_HELP_ADMIN = "/hello - Greetings\n/help - show this message\n/user_list - list of subscribers\n/secret_list - get participants list for next event\n/send_broad <message> - send message to all users\n/send <user_id> <message> - send <message> to <user_id>\n/stop - exclude self from notification list"
