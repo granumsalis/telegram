@@ -7,7 +7,7 @@ import telegram
 import argparse
 from db import granumDB
 from bot import update_chat_db
-
+from pony.orm import db_session
 
 def main():
 
@@ -21,7 +21,7 @@ def main():
     granumDB.bind('sqlite', args.dbfile, create_db=True)
     granumDB.generate_mapping(create_tables=True)
 
-    with open(args.logfile) as log:
+    with open(args.logfile) as log, db_session:
         for line in log:
             try:
                 update = telegram.Update.de_json(json.loads(line.rstrip()))
