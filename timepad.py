@@ -43,18 +43,18 @@ def get_next_event(token, org_id=TIMEPAD_GRANUMSALIS_ORG_ID, date=None):
     starts_at = date_parser.parse(str(next_event['starts_at']))
 
     months = {
-        '1' : 'января',
-        '2' : 'февраля',
-        '3' : 'марта',
-        '4' : 'апреля',
-        '5' : 'мая',
-        '6' : 'июня',
-        '7' : 'июля',
-        '8' : 'августа',
-        '9' : 'сентября',
-        '10' : 'октября',
-        '11' : 'ноября',
-        '12' : 'декабря'
+        '1' : u'января',
+        '2' : u'февраля',
+        '3' : u'марта',
+        '4' : u'апреля',
+        '5' : u'мая',
+        '6' : u'июня',
+        '7' : u'июля',
+        '8' : u'августа',
+        '9' : u'сентября',
+        '10' : u'октября',
+        '11' : u'ноября',
+        '12' : u'декабря'
         }
 
     next_params = {
@@ -63,17 +63,17 @@ def get_next_event(token, org_id=TIMEPAD_GRANUMSALIS_ORG_ID, date=None):
         'url' : next_event['url'],
         'day' : starts_at['day'],
         'month' : months[starts_at['month']],
-        'time' : starts_at['hours']+':'+starts_at['minutes'],
+        'time' : '{}:{}'.format(starts_at['hours'], starts_at['minutes']),
         'address' : next_event['location']['address']
         }
 
-    with codecs.open(NEXT_TEMPLATE_FILENAME,'r',encoding='utf-8') as f:
+    with codecs.open(NEXT_TEMPLATE_FILENAME, 'r', encoding='utf-8') as f:
         next_template = f.readlines()
+
     next = []
     for line in next_template:
         next.append(line.format(**next_params))
-
-    next='\n'.join(next)
+    next=''.join(next)
 
     return next
 
