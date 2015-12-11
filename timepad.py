@@ -9,6 +9,8 @@ import pdfkit
 import sys
 import parse
 
+reload(sys)
+sys.setdefaultencoding('UTF8')
 
 TIMEPAD_GRANUMSALIS_ORG_ID = 50011
 TIMEPAD_LIST_FILENAME = '/tmp/granumsalis-list{0}{1}.{2}'
