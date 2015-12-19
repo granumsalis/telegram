@@ -121,6 +121,7 @@ def update_chat_db(message):
             chat.silent_mode = False
             chat.deleted = False
 
+        return chat.primary_id
 
 
 def send_broad(bot, text):
@@ -184,8 +185,8 @@ def run(bot, admin_list, logfile, slackbot):
     for update in bot.getUpdates(offset=LAST_UPDATE_ID, timeout=10):
         message = update.message
         log_update(update, logfile, slackbot)
-        update_chat_db(message)
-        is_admin = str(message.from_user.id) in admin_list
+        primary_id = update_chat_db(message)
+        is_admin = str(primary_id) in admin_list
     
         if message.left_chat_participant:
             pass
