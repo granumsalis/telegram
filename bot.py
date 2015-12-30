@@ -19,9 +19,9 @@ from db import granumDB, Chat
 LAST_UPDATE_ID = None
 MESSAGE_START = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
 MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
-MESSAGE_HELP = "/hello - Greetings\n/help - show this message\n/next - next event\n/stop - exclude self from notification list"
-KEYBOARD = '{"keyboard" : [["/start", "/stop", "/next", "/help"]], "resize_keyboard" : true}'
-KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/stop", "/next", "/help"], ["/user_list", "/secret_list"]], "resize_keyboard" : true}'
+MESSAGE_HELP = "/hello - Greetings\n/help - show this message\n/next - next event\n/stop - exclude self from notification list\n/NY - New Year schedule"
+KEYBOARD = '{"keyboard" : [["/start", "/stop", "/next", "/NY", "/help"]], "resize_keyboard" : true}'
+KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/stop", "/next", "/NY", "/help"], ["/user_list", "/secret_list"]], "resize_keyboard" : true}'
 MESSAGE_HELP_ADMIN = "/hello - Greetings\n/help - show this message\n/next - next event\n/user_list - list of subscribers\n/secret_list - get participants list for next event\n/send_broad <message> - send message to all users\n/send <user_id> <message> - send <message> to <user_id>\n/stop - exclude self from notification list"
 MESSAGE_ALARM = "Аларм! Аларм!"
 CHAT_ID_ALARM = 79031498
@@ -35,6 +35,7 @@ USER_LIST_CMD = '/user_list'
 HELLO_CMD = '/hello'
 HELP_CMD = '/help'
 NEXT_CMD = '/next'
+NY_CMD = '/ny'
 TELEGRAM_MSG_CHANNEL = '#telegram-messages'
 
 
@@ -180,6 +181,10 @@ def send_message(bot, message):
                 bot.sendMessage(chat_id=chat.chat_id, text=text)
 
 
+def get_ny_schedule_message():
+    CMD = "curl -s 'https://docs.google.com/spreadsheets/d/1eBh9w0WRRJleBQd7eVHFKBQgc5V_w0TYymMkKHL6598/export?format=tsv&id=1eBh9w0WRRJleBQd7eVHFKBQgc5V_w0TYymMkKHL6598&gid=1758330787' | awk 'NF > 2 {print }'"
+    return os.popen(CMD).read()
+
 def run(bot, admin_list, logfile, slackbot):
     global LAST_UPDATE_ID
     for update in bot.getUpdates(offset=LAST_UPDATE_ID, timeout=10):
@@ -210,6 +215,9 @@ def run(bot, admin_list, logfile, slackbot):
             timepad_token = open('.timepad_token').readline().strip()
             next_event_message=timepad.get_next_event(timepad_token)
             bot.sendMessage(chat_id=message.chat_id, text=next_event_message)
+        elif message.text.lower() == NY_CMD:
+            ny_schedule_message = get_ny_schedule_message()
+            bot.sendMessage(chat_id=message.chat_id, text=ny_schedule_message)
         elif is_admin and message.text.startswith(SEND_BROAD_CMD):
             send_broad(bot, message.text[len(SEND_BROAD_CMD) + 1:])
         elif is_admin and message.text.startswith(SEND_MSG_CMD):
