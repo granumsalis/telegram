@@ -74,10 +74,13 @@ def main():
         except telegram.TelegramError as error:
             print "TelegramError", error
             time.sleep(1)
-        except Exception:
+        except:
             traceback.print_exc()
-            bot.sendMessage(chat_id=CHAT_ID_ALARM, text=MESSAGE_ALARM)
-            time.sleep(100)
+            try:
+                bot.sendMessage(chat_id=CHAT_ID_ALARM, text=MESSAGE_ALARM)
+            except:
+                pass
+            time.sleep(100) # 100 seconds
 
 
 def log_update(update, logfile, slackbot):
