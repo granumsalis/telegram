@@ -83,11 +83,12 @@ def main():
             time.sleep(100) # 100 seconds
 
 
-def log_update(update, logfile, slackbot):
+def log_update(update, logfile, slackbot, primary_id):
     message = update.message
-    slack_text = u'{} {} ({}): {{}}\n'.format(message.from_user.first_name,
-                                                message.from_user.last_name,
-                                                message.from_user.name)
+    slack_text = u'{} {} ({}, GSid: {}): {{}}\n'.format(message.from_user.first_name,
+                                                        message.from_user.last_name,
+                                                        message.from_user.name,
+                                                        primary_id)
     if message.left_chat_participant:
         slack_text = slack_text.format('jeft bot chat')
     elif message.new_chat_participant:
@@ -192,8 +193,8 @@ def run(bot, admin_list, logfile, slackbot):
     global LAST_UPDATE_ID
     for update in bot.getUpdates(offset=LAST_UPDATE_ID, timeout=10):
         message = update.message
-        log_update(update, logfile, slackbot)
         primary_id = update_chat_db(message)
+        log_update(update, logfile, slackbot, primary_id)
         is_admin = str(primary_id) in admin_list
     
         if message.left_chat_participant:
