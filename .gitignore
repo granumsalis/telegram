@@ -1,3 +1,4 @@
 .*_token
 .admin_ids
 *.pyc
+/venv/
