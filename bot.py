@@ -196,14 +196,13 @@ def run(bot, admin_list, logfile, slackbot):
         primary_id = update_chat_db(message)
         log_update(update, logfile, slackbot, primary_id)
         is_admin = str(primary_id) in admin_list
+        reply_markup = KEYBOARD_ADMIN if is_admin else KEYBOARD
     
         if message.left_chat_participant:
             pass
         elif message.text == HELP_CMD:
-            if is_admin:
-                bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_HELP_ADMIN)
-            else:
-                bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_HELP)
+                bot.sendMessage(chat_id=message.chat_id, \
+                                text=MESSAGE_HELP_ADMIN if is_admin else MESSAGE_HELP)
         elif message.text == HELLO_CMD:
             if message.from_user != None:
                 username = message.from_user.first_name + ' ' + message.from_user.last_name
@@ -211,19 +210,18 @@ def run(bot, admin_list, logfile, slackbot):
                 username = 'Anonymous'
             bot.sendMessage(chat_id=message.chat_id, text="Hello, {}!".format(username))
         elif message.text == START_CMD:
-            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_START, \
-                                reply_markup=(KEYBOARD_ADMIN if is_admin else KEYBOARD))
+            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_START, reply_markup=reply_markup)
         elif message.text == STOP_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
         elif message.text == NEXT_CMD:
             timepad_token = open('.timepad_token').readline().strip()
             next_event_message=timepad.get_next_event(timepad_token)
-            bot.sendMessage(chat_id=message.chat_id, text=next_event_message)
+            bot.sendMessage(chat_id=message.chat_id, text=next_event_message, reply_markup=reply_markup)
         elif message.text.lower() == TIMING_CMD:
             timing_message = get_timing_message()
-            bot.sendMessage(chat_id=message.chat_id, text=timing_message)
+            bot.sendMessage(chat_id=message.chat_id, text=timing_message, reply_markup=reply_markup)
         elif is_admin and message.text.startswith(SEND_BROAD_CMD):
-            send_broad(bot, message.text[len(SEND_BROAD_CMD) + 1:])
+            send_broad(bot, message.text[len(SEND_BROAD_CMD) + 1:], reply_markup=reply_markup)
         elif is_admin and message.text.startswith(SEND_MSG_CMD):
             send_message(bot, message)
         elif is_admin and message.text == SECRET_LIST_CMD:
