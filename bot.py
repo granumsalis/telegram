@@ -20,8 +20,8 @@ LAST_UPDATE_ID = None
 MESSAGE_START = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
 MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
 MESSAGE_HELP = "/hello - Greetings\n/help - show this message\n/next - next event\n/stop - exclude self from notification list\n/timing - timetable"
-KEYBOARD = '{"keyboard" : [["/start", "/stop", "/next", "/timing", "/help"]], "resize_keyboard" : true}'
-KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/stop", "/next", "/timing", "/help"], ["/user_list", "/secret_list"]], "resize_keyboard" : true}'
+KEYBOARD = '{"keyboard" : [["/start", "/stop", "/next"], ["/timing", "/help"]], "resize_keyboard" : true}'
+KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/stop", "/next"], ["/timing", "/help"], ["/user_list", "/secret_list"]], "resize_keyboard" : true}'
 MESSAGE_HELP_ADMIN = "/hello - Greetings\n/help - show this message\n/next - next event\n/user_list - list of subscribers\n/secret_list - get participants list for next event\n/send_broad <message> - send message to all users\n/send <user_id> <message> - send <message> to <user_id>\n/stop - exclude self from notification list"
 MESSAGE_ALARM = "Аларм! Аларм!"
 CHAT_ID_ALARM = 79031498
@@ -212,7 +212,7 @@ def run(bot, admin_list, logfile, slackbot):
         elif message.text == START_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_START, reply_markup=reply_markup)
         elif message.text == STOP_CMD:
-            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP)
+            bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_STOP, reply_markup=reply_markup)
         elif message.text == NEXT_CMD:
             timepad_token = open('.timepad_token').readline().strip()
             next_event_message=timepad.get_next_event(timepad_token)
