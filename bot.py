@@ -208,7 +208,7 @@ def run(bot, admin_list, logfile, slackbot):
                 username = message.from_user.first_name + ' ' + message.from_user.last_name
             else:
                 username = 'Anonymous'
-            bot.sendMessage(chat_id=message.chat_id, text="Hello, {}!".format(username))
+            bot.sendMessage(chat_id=message.chat_id, text=u'Hello, {}!'.format(username))
         elif message.text == START_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=MESSAGE_START, reply_markup=reply_markup)
         elif message.text == STOP_CMD:
