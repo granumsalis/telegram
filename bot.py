@@ -129,11 +129,13 @@ def update_chat_db(message):
         return chat.primary_id
 
 
-def send_broad(bot, text):
+def send_broad(bot, text, admin_list):
     with db_session:
-        for chat_id in select(chat.chat_id for chat in Chat if not (chat.silent_mode or chat.deleted)):
+        for chat in select(chat for chat in Chat if not (chat.silent_mode or chat.deleted)):
             try:
-                bot.sendMessage(chat_id=chat_id, text=text)
+                is_admin = str(chat.primary_id) in admin_list
+                reply_markup = KEYBOARD_ADMIN if is_admin else KEYBOARD
+                bot.sendMessage(chat_id=chat.chat_id, text=text, reply_markup=reply_markup)
             except telegram.TelegramError:
                 pass
 
@@ -221,7 +223,7 @@ def run(bot, admin_list, logfile, slackbot):
             timing_message = get_timing_message()
             bot.sendMessage(chat_id=message.chat_id, text=timing_message, reply_markup=reply_markup)
         elif is_admin and message.text.startswith(SEND_BROAD_CMD):
-            send_broad(bot, message.text[len(SEND_BROAD_CMD) + 1:], reply_markup=reply_markup)
+            send_broad(bot, message.text[len(SEND_BROAD_CMD) + 1:], admin_list)
         elif is_admin and message.text.startswith(SEND_MSG_CMD):
             send_message(bot, message)
         elif is_admin and message.text == SECRET_LIST_CMD:
