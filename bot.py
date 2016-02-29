@@ -11,21 +11,23 @@ import time
 import timepad
 import os
 import traceback
+import urllib2
 from datetime import datetime
 from pony.orm import db_session, select
 from db import granumDB, Chat
 
 
 LAST_UPDATE_ID = None
-MESSAGE_START = "Пока никаких новостей...\nЯ буду присылать анонсы сюда и в канал @GranumSalis."
-MESSAGE_STOP = "Я умолкаю в этом чате! Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
-MESSAGE_HELP = "/hello - Greetings\n/help - show this message\n/next - next event\n/stop - exclude self from notification list\n/timing - timetable"
-KEYBOARD = '{"keyboard" : [["/start", "/stop", "/next"], ["/timing", "/help"]], "resize_keyboard" : true}'
-KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/stop", "/next"], ["/timing", "/help"], ["/user_list", "/secret_list"]], "resize_keyboard" : true}'
-MESSAGE_HELP_ADMIN = "/hello - Greetings\n/help - show this message\n/next - next event\n/user_list - list of subscribers\n/secret_list - get participants list for next event\n/send_broad <message> - send message to all users\n/send <user_id> <message> - send <message> to <user_id>\n/stop - exclude self from notification list"
+MESSAGE_START = "Вы подписаны на рассылку новостей.\nЯ буду присылать анонсы сюда и в канал @GranumSalis. Наберите /stop, чтобы остановить рассылку."
+MESSAGE_STOP = "Я умолкаю в этом чате! Наберите /start, чтобы вновь подписаться на рассылку анонсов. Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
+MESSAGE_HELP = "/flood - ссылка на флуд-чат\n/help - показать это сообщение\n/next - ближайшее мероприятие\n/start - подписаться на рассылку анонсов\n/stop - остановить рассылку анонсов\n/timing - расписание ближайшего мероприятия"
+KEYBOARD = '{"keyboard" : [["/start", "/flood"], ["/next", "/timing", "/help"]], "resize_keyboard" : true}'
+KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/flood"], ["/next", "/timing", "/help"], ["/user_list", "/secret_list"]], "resize_keyboard" : true}'
+MESSAGE_HELP_ADMIN = MESSAGE_HELP + "\n/user_list - list of subscribers\n/secret_list - get participants list for next event\n/send_broad <message> - send message to all users\n/send <user_id> <message> - send <message> to <user_id>"
 MESSAGE_ALARM = "Аларм! Аларм!"
 CHAT_ID_ALARM = 79031498
 BOT_ID = 136777319
+FLOOD_CHAT_LINK = 'Чат для щепоточного флуда: https://telegram.me/joinchat/BLXsyghalbG00BT_9U3viA'
 SEND_BROAD_CMD = '/send_broad'
 SEND_MSG_CMD = '/send'
 START_CMD = '/start'
@@ -35,6 +37,7 @@ USER_LIST_CMD = '/user_list'
 HELLO_CMD = '/hello'
 HELP_CMD = '/help'
 NEXT_CMD = '/next'
+FLOOD_CMD = '/flood'
 TIMING_CMD = '/timing'
 TELEGRAM_MSG_CHANNEL = '#telegram-messages'
 
@@ -73,6 +76,9 @@ def main():
             run(bot, admin_ids, args.logfile, slackbot)
         except telegram.TelegramError as error:
             print "TelegramError", error
+            time.sleep(1)
+        except urllib2.URLError as error:
+            print "URLError", error
             time.sleep(1)
         except:
             traceback.print_exc()
@@ -126,7 +132,7 @@ def update_chat_db(message):
             chat.silent_mode = False
             chat.deleted = False
 
-        return chat.primary_id
+        return chat.primary_id, chat.silent_mode
 
 
 def send_broad(bot, text, admin_list):
@@ -191,14 +197,17 @@ def get_timing_message():
     CMD = "curl -s 'https://docs.google.com/spreadsheets/d/1eBh9w0WRRJleBQd7eVHFKBQgc5V_w0TYymMkKHL6598/export?format=tsv&id=1eBh9w0WRRJleBQd7eVHFKBQgc5V_w0TYymMkKHL6598&gid=1758330787' | sed -e 's/[[:space:]]$//g' | awk 'NF > 1 {print }'"
     return os.popen(CMD).read()
 
+
 def run(bot, admin_list, logfile, slackbot):
     global LAST_UPDATE_ID
     for update in bot.getUpdates(offset=LAST_UPDATE_ID, timeout=10):
         message = update.message
-        primary_id = update_chat_db(message)
+        primary_id, silent_mode = update_chat_db(message)
         log_update(update, logfile, slackbot, primary_id)
         is_admin = str(primary_id) in admin_list
         reply_markup = KEYBOARD_ADMIN if is_admin else KEYBOARD
+        if not silent_mode:
+            reply_markup = reply_markup.replace(START_CMD, STOP_CMD)
     
         if message.left_chat_participant:
             pass
@@ -219,6 +228,8 @@ def run(bot, admin_list, logfile, slackbot):
             timepad_token = open('.timepad_token').readline().strip()
             next_event_message=timepad.get_next_event(timepad_token)
             bot.sendMessage(chat_id=message.chat_id, text=next_event_message, reply_markup=reply_markup)
+        elif message.text == FLOOD_CMD:
+            bot.sendMessage(chat_id=message.chat_id, text=FLOOD_CHAT_LINK, reply_markup=reply_markup)
         elif message.text.lower() == TIMING_CMD:
             timing_message = get_timing_message()
             bot.sendMessage(chat_id=message.chat_id, text=timing_message, reply_markup=reply_markup)
