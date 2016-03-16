@@ -21,14 +21,15 @@ from db import granumDB, Chat
 LAST_UPDATE_ID = None
 MESSAGE_START = "Вы подписаны на рассылку новостей.\nЯ буду присылать анонсы сюда и в канал @GranumSalis. Наберите /stop, чтобы остановить рассылку."
 MESSAGE_STOP = "Я умолкаю в этом чате! Наберите /start, чтобы вновь подписаться на рассылку анонсов. Может быть, за анонсами удобнее следить в канале @GranumSalis?.."
-MESSAGE_HELP = "/flood - ссылка на флуд-чат\n/help - показать это сообщение\n/next - ближайшее мероприятие\n/start - подписаться на рассылку анонсов\n/stop - остановить рассылку анонсов\n/timing - расписание ближайшего мероприятия"
-KEYBOARD = '{"keyboard" : [["/start", "/flood"], ["/next", "/timing", "/help"]], "resize_keyboard" : true}'
-KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/flood"], ["/next", "/timing", "/help"], ["/user_list", "/secret_list"]], "resize_keyboard" : true}'
+MESSAGE_HELP = "/flood - ссылка на флуд-чат\n/help - показать это сообщение\n/next - ближайшее мероприятие\n/promo - информация об акциях\n/start - подписаться на рассылку анонсов\n/stop - остановить рассылку анонсов\n/timing - расписание ближайшего мероприятия"
+KEYBOARD = '{"keyboard" : [["/start", "/flood", "/promo"], ["/next", "/timing", "/help"]], "resize_keyboard" : true}'
+KEYBOARD_ADMIN = '{"keyboard" : [["/start", "/flood", "/promo"], ["/next", "/timing", "/help"], ["/user_list", "/secret_list"]], "resize_keyboard" : true}'
 MESSAGE_HELP_ADMIN = MESSAGE_HELP + "\n/user_list - list of subscribers\n/secret_list - get participants list for next event\n/send_broad <message> - send message to all users\n/send <user_id> <message> - send <message> to <user_id>"
 MESSAGE_ALARM = "Аларм! Аларм!"
 CHAT_ID_ALARM = 79031498
 BOT_ID = 136777319
 FLOOD_CHAT_LINK = 'Чат для щепоточного флуда: https://telegram.me/joinchat/BLXsyghalbG00BT_9U3viA'
+PROMO_MESSAGE = 'Человек, вот твой промокод: promo_{}_{}\n\nИспользуй его при заказе билета на любое из предстоящих мероприятий, чтобы получить скидку в 150 рублей (по отношению к самому дешевому билету). Срок действия промокода неограничен, но доступен он станет не сразу. Я оповещу тебя, когда он начнёт действовать.'
 SEND_BROAD_CMD = '/send_broad'
 SEND_MSG_CMD = '/send'
 START_CMD = '/start'
@@ -40,6 +41,7 @@ HELP_CMD = '/help'
 NEXT_CMD = '/next'
 FLOOD_CMD = '/flood'
 TIMING_CMD = '/timing'
+PROMO_CMD = '/promo'
 TELEGRAM_MSG_CHANNEL = '#telegram-messages'
 
 
@@ -161,7 +163,7 @@ def send_large_message(bot, chat_id, text):
     lines = text.splitlines()
     for block in grouper(lines, MAX_LINES, ''):
         bot.sendMessage(chat_id=chat_id, text='\n'.join(block))
-    
+
 
 def print_userlist(bot, message):
     with db_session:
@@ -247,6 +249,12 @@ def run(bot, admin_list, logfile, slackbot):
             bot.sendMessage(chat_id=message.chat_id, text=next_event_message, reply_markup=reply_markup)
         elif message.text == FLOOD_CMD:
             bot.sendMessage(chat_id=message.chat_id, text=FLOOD_CHAT_LINK, reply_markup=reply_markup)
+        elif message.text == PROMO_CMD:
+            promo = PROMO_MESSAGE.format(message.from_user.username, primary_id)
+            promo = 'Пока что никаких промоакций нет. Следите за анонсами мероприятий.'
+            if primary_id > 209:
+                promo = 'Спасибо, что недавно добавились ко мне в друзья! Позвольте мне предоставить вам скидку на следующее (/next) мероприятие. Ваш промокод: promo_{}. Если что-то не работает, пишите прямо сюда.'.format(primary_id)
+            bot.sendMessage(chat_id=message.chat_id, text=promo, reply_markup=reply_markup)
         elif message.text.lower() == TIMING_CMD:
             timing_message = get_timing_message()
             bot.sendMessage(chat_id=message.chat_id, text=timing_message, reply_markup=reply_markup)
