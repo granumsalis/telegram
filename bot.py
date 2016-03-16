@@ -12,6 +12,7 @@ import timepad
 import os
 import traceback
 import urllib2
+import itertools
 from datetime import datetime
 from pony.orm import db_session, select
 from db import granumDB, Chat
@@ -119,6 +120,8 @@ def update_chat_db(message):
         else:
             chat.last_message_date = datetime.now()
             chat.username = message.from_user.username
+            chat.first_name = message.from_user.first_name
+            chat.last_name = message.from_user.last_name
 
         if message.text == STOP_CMD:
             chat.silent_mode = True
@@ -142,9 +145,23 @@ def send_broad(bot, text, admin_list):
                 is_admin = str(chat.primary_id) in admin_list
                 reply_markup = KEYBOARD_ADMIN if is_admin else KEYBOARD
                 bot.sendMessage(chat_id=chat.chat_id, text=text, reply_markup=reply_markup)
-            except telegram.TelegramError:
-                pass
+            except telegram.TelegramError as error:
+                print "TelegramError", error
 
+
+def send_large_message(bot, chat_id, text):
+    MAX_LINES = 100
+
+    def grouper(iterable, n, fillvalue=None):
+        "Collect data into fixed-length chunks or blocks"
+        # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
+        args = [iter(iterable)] * n
+        return itertools.izip_longest(fillvalue=fillvalue, *args)
+
+    lines = text.splitlines()
+    for block in grouper(lines, MAX_LINES, ''):
+        bot.sendMessage(chat_id=chat_id, text='\n'.join(block))
+    
 
 def print_userlist(bot, message):
     with db_session:
@@ -159,9 +176,9 @@ def print_userlist(bot, message):
             chats_str += '\n'
 
         try:
-            bot.sendMessage(chat_id=message.chat_id, text=chats_str)
-        except telegram.TelegramError:
-            pass
+            send_large_message(bot, message.chat_id, chats_str)
+        except telegram.TelegramError as error:
+            print "TelegramError", error
 
 
 def send_message(bot, message):
@@ -243,7 +260,7 @@ def run(bot, admin_list, logfile, slackbot):
             bot.sendDocument(chat_id=message.chat_id, document=open(timepad_list_filename, 'rb'))
             os.remove(timepad_list_filename)
         elif is_admin and message.text == USER_LIST_CMD:
-            print_userlist(bot,message)
+            print_userlist(bot, message)
         else:
             pass
             
